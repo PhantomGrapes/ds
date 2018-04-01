@@ -15,10 +15,10 @@ data:
   EOS_ID: 3
 
 model:
-  batch_size: 32
-  num_layers: 3
-  num_units: 512
-  embed_dim: 256
+  batch_size: 2
+  num_layers: 2
+  num_units: 128
+  embed_dim: 128
   embed_share: true
   cell_type: gru
   dropout: 0.2

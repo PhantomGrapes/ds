@@ -61,7 +61,7 @@ class Encoder:
 
             return self.bidirectional_rnn(input_vector, sequence_length, scope=scope)
         else:
-            raise ValueError(f"Unknown encoder_type {self.encoder_type}")
+            raise ValueError("Unknown encoder_type {}".format(self.encoder_type))
 
     def unidirectional_rnn(self, input_vector, sequence_length, scope=None):
         return tf.nn.dynamic_rnn(
@@ -132,7 +132,7 @@ class Encoder:
             single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
                 self.num_units)
         else:
-            raise ValueError(f"Unknown rnn cell type. {self.cell_type}")
+            raise ValueError("Unknown rnn cell type. {}".format(self.cell_type))
 
         if self.dropout > 0.0:
             single_cell = tf.contrib.rnn.DropoutWrapper(

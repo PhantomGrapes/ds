@@ -70,7 +70,6 @@ def twitter_question_answers():
                 twitter_corpus.append(line[:-1].lower())
             else:
                 twitter_corpus.append(line.lower())
-
     questions = twitter_corpus[::2] # even is question
     answers = twitter_corpus[1::2] # odd is answer
 
@@ -238,7 +237,7 @@ def prepare_raw_data():
         questions = co_questions + tw_questions
         answers = co_answers + tw_answers
     else:
-        raise ValueError(f"Unknown data_type, {data_type}")
+        raise ValueError("Unknown data_type, data_type")
 
     prepare_dataset(questions, answers)
 
@@ -262,8 +261,8 @@ def make_train_and_test_set(shuffle=True, bucket=True):
     assert len(train_X) == len(train_y)
     assert len(test_X) == len(test_y)
 
-    print(f"train data count : {len(train_X)}")
-    print(f"test data count : {len(test_X)}")
+    print("train data count :", len(train_X))
+    print("test data count :", len(test_X))
 
     if shuffle:
         print("shuffle dataset ...")
@@ -298,7 +297,7 @@ def load_data(enc_fname, dec_fname):
                 enc_data.append(_pad_input(e_ids, Config.data.max_seq_length))
                 dec_data.append(_pad_input(d_ids, Config.data.max_seq_length))
 
-    print(f"load data from {enc_fname}, {dec_fname}...")
+    print("load data from {enc_fname}, {dec_fname}...")
     return np.array(enc_data, dtype=np.int32), np.array(dec_data, dtype=np.int32)
 
 
@@ -321,7 +320,7 @@ def set_max_seq_length(dataset_fnames):
                 max_seq_length = seq_length
 
     Config.data.max_seq_length = max_seq_length
-    print(f"Setting max_seq_length to Config : {max_seq_length}")
+    print("Setting max_seq_length to Config : {max_seq_length}")
 
 
 def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):

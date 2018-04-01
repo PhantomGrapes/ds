@@ -40,7 +40,7 @@ class Attention:
                         self._create_mechanism(),
                         attention_layer_size=attention_layer_size,
                         alignment_history=alignment_history,
-                        name=f"{self.attention_mechanism}-mechanism")
+                        name="{}-mechanism".format(self.attention_mechanism))
 
     def _create_mechanism(self):
 
@@ -71,7 +71,7 @@ class Attention:
                     scale=True)
 
         else:
-            raise ValueError(f"Unknown attention mechanism {self.attention_mechanism}")
+            raise ValueError("Unknown attention mechanism {}".format(self.attention_mechanism))
 
 
 class Decoder:
@@ -257,7 +257,7 @@ class Decoder:
             single_cell = tf.contrib.rnn.LayerNormBasicLSTMCell(
                 self.num_units)
         else:
-            raise ValueError(f"Unknown rnn cell type. {self.cell_type}")
+            raise ValueError("Unknown rnn cell type. {}".format(self.cell_type))
 
         if self.dropout > 0.0:
             single_cell = tf.contrib.rnn.DropoutWrapper(

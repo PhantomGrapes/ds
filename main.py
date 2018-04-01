@@ -91,7 +91,7 @@ if __name__ == '__main__':
     if Config.get("description", None):
         print("Config Description")
         for key, value in Config.description.items():
-            print(f" - {key}: {value}")
+            print(" - {}: {}".format(key, value))
 
     # After terminated Notification to Slack
     atexit.register(utils.send_message_to_slack, config_name=args.config)

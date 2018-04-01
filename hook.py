@@ -28,9 +28,9 @@ def format_variable(keys, rev_vocab=None):
         result = []
         for key in keys:
             if rev_vocab is None:
-                result.append(f"{key} = {values[key]}")
+                result.append("{} = {}".format(key, values[key]))
             else:
-                result.append(f"{key} = {to_str(values[key])}")
+                result.append("{} = {}".format(key, to_str(values[key])))
 
         try:
             return '\n - '.join(result)

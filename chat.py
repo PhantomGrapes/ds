@@ -100,7 +100,7 @@ def main():
         ids += [Config.data.START_ID]
 
         if len(ids) > Config.data.max_seq_length:
-            print(f"Max length I can handle is: {Config.data.max_seq_length}")
+            print("Max length I can handle is: {}".format(Config.data.max_seq_length))
             continue
 
         answer = chat(ids, vocab)
