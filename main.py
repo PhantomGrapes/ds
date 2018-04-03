@@ -60,8 +60,10 @@ def experiment_fn(run_config, params):
 
 def main(mode):
     params = tf.contrib.training.HParams(**Config.model.to_dict())
+    sess_config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
 
     run_config = tf.contrib.learn.RunConfig(
+            session_config=sess_config,
             model_dir=Config.train.model_dir,
             save_checkpoints_steps=Config.train.save_checkpoints_steps)
 

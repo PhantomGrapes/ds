@@ -1,11 +1,11 @@
 data:
-  type: twitter
+  type: nlpcc
   base_path: 'data/'
-  line_fname: 'twitter_en.txt'
-  processed_path: 'processed_twitter_dialogs_data'
+  line_fname: 'train.txt'
+  processed_path: 'processed_nlpcc_data_formal'
 
   word_threshold: 2
-  max_seq_length: 200
+  max_seq_length: 100
   sentence_diff: 0.33
   testset_size: 25000
 
@@ -15,10 +15,10 @@ data:
   EOS_ID: 3
 
 model:
-  batch_size: 2
-  num_layers: 2
+  batch_size: 12
+  num_layers: 3
   num_units: 256
-  embed_dim: 128
+  embed_dim: 512
   embed_share: true
   cell_type: gru
   dropout: 0.2
@@ -30,7 +30,7 @@ train:
   sampling_probability: 0.4
 
   train_steps: 1000
-  model_dir: 'logs/twitter_dialogs'
+  model_dir: 'logs/nlpcc'
 
   save_checkpoints_steps: 1000
   loss_hook_n_iter: 1000
