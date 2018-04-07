@@ -1,13 +1,13 @@
 data:
   type: nlpcc
   base_path: 'data/'
-  line_fname: 'train.txt'
-  processed_path: 'processed_nlpcc_data_formal'
+  line_fname: 'sample.txt'
+  processed_path: 'processed_nlpcc_data'
 
   word_threshold: 2
   max_seq_length: 100
   sentence_diff: 0.33
-  testset_size: 25000
+  testset_size: 1000
 
   PAD_ID: 0
   UNK_ID: 1
@@ -15,10 +15,10 @@ data:
   EOS_ID: 3
 
 model:
-  batch_size: 12
-  num_layers: 3
-  num_units: 256
-  embed_dim: 512
+  batch_size: 5
+  num_layers: 2
+  num_units: 128
+  embed_dim: 128
   embed_share: true
   cell_type: gru
   dropout: 0.2

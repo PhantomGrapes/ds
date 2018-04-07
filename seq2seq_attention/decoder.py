@@ -149,6 +149,16 @@ class Decoder:
             start_tokens=None,
             end_token=None,
             length_penalty_weight=1.0):
+        """
+
+        :param inputs: batch_size*seq_length*encoder_size
+        :param sequence_length: batch_size
+        :param embedding: embedding矩阵
+        :param start_tokens:
+        :param end_token:
+        :param length_penalty_weight:
+        :return:
+        """
 
         if self.mode == tf.estimator.ModeKeys.TRAIN:
             assert inputs is not None

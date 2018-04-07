@@ -5,6 +5,7 @@ import argparse
 import os
 import random
 import re
+import json
 
 from hbconfig import Config
 import numpy as np
@@ -29,15 +30,14 @@ def get_question_answers():
         session = []
         for line in f.readlines():
             if line.strip() == '':
-                questions.append(';'.join(session[: -1]))
+                questions.append(session[: -1])
                 answers.append(session[-1])
                 session = []
             else:
                 session.append(line.strip().lower())
     if len(session) != 0:
-        questions.append(';'.join(session[: -1]))
+        questions.append(session[: -1])
         answers.append(session[-1])
-        session = []
     assert len(questions) == len(answers)
     return questions, answers
 
@@ -60,10 +60,10 @@ def prepare_dataset(questions, answers):
         answer = answers[i]
 
         if i in test_ids:
-            files[2].write((question + "\n"))
+            files[2].write((json.dumps(question, ensure_ascii=False) + "\n"))
             files[3].write((answer + '\n'))
         else:
-            files[0].write((question + '\n'))
+            files[0].write((json.dumps(question, ensure_ascii=False) + '\n'))
             files[1].write((answer + '\n'))
 
     for file in files:
@@ -102,18 +102,26 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
     print("Count each vocab frequency ...")
 
     vocab = {}
-    def count_vocab(fname):
+    def count_vocab(fname, multi=False):
         with open(fname, 'r', encoding='utf-8') as f:
             for line in tqdm(f.readlines()):
-                for token in segmentor.segment(line):
-                    if not token in vocab:
-                        vocab[token] = 0
-                    vocab[token] += 1
+                if multi:
+                    us = json.loads(line)
+                    for u in us:
+                        for token in segmentor.segment(u):
+                            if not token in vocab:
+                                vocab[token] = 0
+                            vocab[token] += 1
+                else:
+                    for token in segmentor.segment(line):
+                        if not token in vocab:
+                            vocab[token] = 0
+                        vocab[token] += 1
 
     in_path = os.path.join(Config.data.base_path, Config.data.processed_path, in_fname)
     out_path = os.path.join(Config.data.base_path, Config.data.processed_path, out_fname)
 
-    count_vocab(in_path)
+    count_vocab(in_path, multi=True)
     count_vocab(out_path)
 
     print("total vocab size:", len(vocab))
@@ -129,7 +137,6 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
         for word in tqdm(sorted_vocab):
             if vocab[word] < Config.data.word_threshold:
                 break
-
             f.write((word + '\n'))
             index += 1
 
@@ -164,12 +171,21 @@ def token2id(data, mode):
         else:
             ids = []
 
-        sentence_ids = sentence2id(vocab, line)
-        ids.extend(sentence_ids)
+        if mode == 'dec':
+            sentence_ids = sentence2id(vocab, line)
+            ids.extend(sentence_ids)
+        else:
+            us = json.loads(line)
+            for u in us:
+                sentence_ids = sentence2id(vocab, u)
+                ids.append(sentence_ids)
         if mode == 'dec':
             ids.append(vocab['<\s>'])
 
-        out_file.write(' '.join(str(id_) for id_ in ids) + '\n')
+        if mode == 'dec':
+            out_file.write(' '.join(str(id_) for id_ in ids) + '\n')
+        else:
+            out_file.write(json.dumps(ids) + '\n')
 
 
 def prepare_raw_data():
@@ -191,9 +207,14 @@ def process_data():
 
 
 def make_train_and_test_set(shuffle=True, bucket=True):
+    """
+    :param shuffle: shuffle data
+    :param bucket: sort data by length of q & a
+    :return: train and test data in form of np array [DATA_SIZE, SENT_SIZE]
+    """
     print("make Training data and Test data Start....")
 
-    train_X, train_y = load_data('train_ids.enc', 'train_ids.dec')
+    train_X, train_y = load_data('train_ids.enc', 'train_ids.dec') # numpy array, [DATA_SIZE, SNET_SIZE]
     test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
 
     assert len(train_X) == len(train_y)
@@ -218,6 +239,12 @@ def make_train_and_test_set(shuffle=True, bucket=True):
     return train_X, test_X, train_y, test_y
 
 def load_data(enc_fname, dec_fname):
+    """
+    忽略超过长度限制的输入
+    忽略问题答案长度超过diff的
+    对长度不足的添加pad符号
+    :return: numpy array of data
+    """
     enc_input_data = open(os.path.join(Config.data.base_path, Config.data.processed_path, enc_fname), 'r', encoding='utf-8')
     dec_input_data = open(os.path.join(Config.data.base_path, Config.data.processed_path, dec_fname), 'r', encoding='utf-8')
 
@@ -291,6 +318,7 @@ def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):
                     tf.int32, [None, Config.data.max_seq_length])
 
                 # Build dataset iterator
+                # Creates a Dataset whose elements are slices of the given tensors.
                 dataset = tf.data.Dataset.from_tensor_slices(
                     (input_placeholder, output_placeholder))
 

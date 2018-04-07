@@ -16,7 +16,7 @@ import utils
 
 
 def experiment_fn(run_config, params):
-
+    # 先定义estimator
     conversation = Conversation()
     estimator = tf.estimator.Estimator(
             model_fn=conversation.model_fn,
@@ -24,9 +24,11 @@ def experiment_fn(run_config, params):
             params=params,
             config=run_config)
 
+    # 返回字典
     vocab = data_loader.load_vocab("vocab")
     Config.data.vocab_size = len(vocab)
 
+    # 定义训练数据
     train_X, test_X, train_y, test_y = data_loader.make_train_and_test_set()
 
     train_input_fn, train_input_hook = data_loader.make_batch((train_X, train_y), batch_size=Config.model.batch_size)
@@ -45,6 +47,7 @@ def experiment_fn(run_config, params):
     if Config.train.debug:
         eval_hooks.append(tf_debug.LocalCLIDebugHook())
 
+    # 定义实验
     experiment = tf.contrib.learn.Experiment(
         estimator=estimator,
         train_input_fn=train_input_fn,

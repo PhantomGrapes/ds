@@ -83,6 +83,7 @@ class Encoder:
                 scope=scope)
 
         if self.cell_type == self.RNN_LSTM_CELL:
+            # -1表示最后一个cell即最后一层
             encoder_final_state_c = tf.concat((output_state_fw[-1].c, output_state_bw[-1].c), axis=1)
             encoder_final_state_h = tf.concat((output_state_fw[-1].h, output_state_bw[-1].h), axis=1)
             encoder_final_state = tf.contrib.rnn.LSTMStateTuple(c=encoder_final_state_c, h=encoder_final_state_h)

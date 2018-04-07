@@ -19,6 +19,7 @@ class Graph:
 
         # set inputs variable
         self.encoder_inputs = encoder_inputs
+        # 得到每个句子的真实长度
         self.encoder_input_lengths = tf.reduce_sum(
             tf.to_int32(tf.not_equal(self.encoder_inputs, Config.data.PAD_ID)), 1,
             name="encoder_input_lengths")
@@ -39,6 +40,7 @@ class Graph:
     def _build_embed(self):
         with tf.variable_scope ("embeddings", dtype=self.dtype) as scope:
 
+            # encoder和decode是否用同一个embedding矩阵
             if Config.model.embed_share:
                 embedding = tf.get_variable(
                     "embedding_share", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
@@ -51,9 +53,11 @@ class Graph:
                 self.embedding_decoder = tf.get_variable(
                     "embedding_decoder", [Config.data.vocab_size, Config.model.embed_dim], self.dtype)
 
+            # 将encoder输入根据emb矩阵映射为向量
             self.encoder_emb_inp = tf.nn.embedding_lookup(
                 self.embedding_encoder, self.encoder_inputs)
 
+            # 将decoder输出根据emb矩阵映射为向量
             if self.mode == tf.estimator.ModeKeys.TRAIN:
                 self.decoder_emb_inp = tf.nn.embedding_lookup(
                     self.embedding_decoder, self.decoder_inputs)
@@ -73,6 +77,7 @@ class Graph:
                     input_vector=self.encoder_emb_inp,
                     sequence_length=self.encoder_input_lengths)
 
+            # 处理beamsearch，toread
             if self.mode == tf.estimator.ModeKeys.PREDICT and self.beam_width > 0:
                 self.encoder_outputs = tf.contrib.seq2seq.tile_batch(
                         self.encoder_outputs, self.beam_width)
