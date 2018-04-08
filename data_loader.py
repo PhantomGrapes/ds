@@ -9,15 +9,17 @@ import json
 
 from hbconfig import Config
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 from tqdm import tqdm
 
 
-MODELDIR = "/home/dingo/lib_data/ltp_data_v3.4.0"
-from pyltp import Segmentor
+# MODELDIR = "/Users/dingruixue/Downloads/ltp_data_v3.4.0"
+# from pyltp import Segmentor
+#
+# segmentor = Segmentor()
+# segmentor.load(os.path.join(MODELDIR, "cws.model"))
 
-segmentor = Segmentor()
-segmentor.load(os.path.join(MODELDIR, "cws.model"))
+segmentor = None
 
 
 def get_question_answers():
@@ -231,11 +233,6 @@ def make_train_and_test_set(shuffle=True, bucket=True):
         train_X, train_y = train_X[train_p], train_y[train_p]
         test_X, test_y = test_X[test_p], test_y[test_p]
 
-    if bucket:
-        print("sorted by inputs length and outputs length ...")
-        train_X, train_y = zip(*sorted(zip(train_X, train_y), key=lambda x: len(x[0]) + len([x[1]])))
-        test_X, test_y = zip(*sorted(zip(test_X, test_y), key=lambda x: len(x[0]) + len([x[1]])))
-
     return train_X, test_X, train_y, test_y
 
 def load_data(enc_fname, dec_fname):
@@ -250,20 +247,20 @@ def load_data(enc_fname, dec_fname):
 
     enc_data, dec_data = [], []
     for e_line, d_line in tqdm(zip(enc_input_data.readlines(), dec_input_data.readlines())):
-        e_ids = [int(id_) for id_ in e_line.split()]
+        e_ids = json.loads(e_line)
         d_ids = [int(id_) for id_ in d_line.split()]
 
         if len(e_ids) == 0 or len(d_ids) == 0:
             continue
 
-        if len(e_ids) <= Config.data.max_seq_length and len(d_ids) < Config.data.max_seq_length:
-
-            if abs(len(d_ids) - len(e_ids)) / (len(e_ids) + len(d_ids)) < Config.data.sentence_diff:
-                enc_data.append(_pad_input(e_ids, Config.data.max_seq_length))
-                dec_data.append(_pad_input(d_ids, Config.data.max_seq_length))
+        seq_length = max([len(arr) for arr in e_ids])
+        if seq_length <= Config.data.max_seq_length and len(d_ids) < Config.data.max_seq_length:
+            if abs(len(d_ids) - seq_length) / (seq_length + len(d_ids)) < Config.data.sentence_diff:
+                enc_data.append(e_ids)
+                dec_data.append(d_ids)
 
     print("load data from {enc_fname}, {dec_fname}...")
-    return np.array(enc_data, dtype=np.int32), np.array(dec_data, dtype=np.int32)
+    return np.array(enc_data), np.array(dec_data)
 
 
 def _pad_input(input_, size):
@@ -287,68 +284,68 @@ def set_max_seq_length(dataset_fnames):
     Config.data.max_seq_length = max_seq_length
     print("Setting max_seq_length to Config : {max_seq_length}")
 
-
-def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):
-
-    class IteratorInitializerHook(tf.train.SessionRunHook):
-        """Hook to initialise data iterator after Session is created."""
-
-        def __init__(self):
-            super(IteratorInitializerHook, self).__init__()
-            self.iterator_initializer_func = None
-
-        def after_create_session(self, session, coord):
-            """Initialise the iterator after the session has been created."""
-            self.iterator_initializer_func(session)
-
-
-    def get_inputs():
-
-        iterator_initializer_hook = IteratorInitializerHook()
-
-        def train_inputs():
-            with tf.name_scope(scope):
-
-                X, y = data
-
-                # Define placeholders
-                input_placeholder = tf.placeholder(
-                    tf.int32, [None, Config.data.max_seq_length])
-                output_placeholder = tf.placeholder(
-                    tf.int32, [None, Config.data.max_seq_length])
-
-                # Build dataset iterator
-                # Creates a Dataset whose elements are slices of the given tensors.
-                dataset = tf.data.Dataset.from_tensor_slices(
-                    (input_placeholder, output_placeholder))
-
-                if scope == "train":
-                    dataset = dataset.repeat(None)  # Infinite iterations
-                else:
-                    dataset = dataset.repeat(1)  # 1 Epoch
-                # dataset = dataset.shuffle(buffer_size=buffer_size)
-                dataset = dataset.batch(batch_size)
-
-                iterator = dataset.make_initializable_iterator()
-                next_X, next_y = iterator.get_next()
-
-                tf.identity(next_X[0], 'enc_0')
-                tf.identity(next_y[0], 'dec_0')
-
-                # Set runhook to initialize iterator
-                iterator_initializer_hook.iterator_initializer_func = \
-                    lambda sess: sess.run(
-                        iterator.initializer,
-                        feed_dict={input_placeholder: X,
-                                   output_placeholder: y})
-
-                # Return batched (features, labels)
-                return next_X, next_y
-
-        # Return function and hook
-        return train_inputs, iterator_initializer_hook
-
-    return get_inputs()
+#
+# def make_batch(data, buffer_size=10000, batch_size=64, scope="train"):
+#
+#     class IteratorInitializerHook(tf.train.SessionRunHook):
+#         """Hook to initialise data iterator after Session is created."""
+#
+#         def __init__(self):
+#             super(IteratorInitializerHook, self).__init__()
+#             self.iterator_initializer_func = None
+#
+#         def after_create_session(self, session, coord):
+#             """Initialise the iterator after the session has been created."""
+#             self.iterator_initializer_func(session)
+#
+#
+#     def get_inputs():
+#
+#         iterator_initializer_hook = IteratorInitializerHook()
+#
+#         def train_inputs():
+#             with tf.name_scope(scope):
+#
+#                 X, y = data
+#
+#                 # Define placeholders
+#                 input_placeholder = tf.placeholder(
+#                     tf.int32, [None, Config.data.max_seq_length])
+#                 output_placeholder = tf.placeholder(
+#                     tf.int32, [None, Config.data.max_seq_length])
+#
+#                 # Build dataset iterator
+#                 # Creates a Dataset whose elements are slices of the given tensors.
+#                 dataset = tf.data.Dataset.from_tensor_slices(
+#                     (input_placeholder, output_placeholder))
+#
+#                 if scope == "train":
+#                     dataset = dataset.repeat(None)  # Infinite iterations
+#                 else:
+#                     dataset = dataset.repeat(1)  # 1 Epoch
+#                 # dataset = dataset.shuffle(buffer_size=buffer_size)
+#                 dataset = dataset.batch(batch_size)
+#
+#                 iterator = dataset.make_initializable_iterator()
+#                 next_X, next_y = iterator.get_next()
+#
+#                 tf.identity(next_X[0], 'enc_0')
+#                 tf.identity(next_y[0], 'dec_0')
+#
+#                 # Set runhook to initialize iterator
+#                 iterator_initializer_hook.iterator_initializer_func = \
+#                     lambda sess: sess.run(
+#                         iterator.initializer,
+#                         feed_dict={input_placeholder: X,
+#                                    output_placeholder: y})
+#
+#                 # Return batched (features, labels)
+#                 return next_X, next_y
+#
+#         # Return function and hook
+#         return train_inputs, iterator_initializer_hook
+#
+#     return get_inputs()
 
 
 if __name__ == '__main__':

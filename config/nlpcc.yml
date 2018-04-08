@@ -24,8 +24,10 @@ model:
   dropout: 0.2
   encoder_type: bi
   attention_mechanism: normed_bahdanau
+  attention_size: 128
 
 train:
+  epoch: 10
   learning_rate: 0.001
   sampling_probability: 0.4
 
@@ -33,7 +35,7 @@ train:
   model_dir: 'logs/nlpcc'
 
   save_checkpoints_steps: 1000
-  loss_hook_n_iter: 1000
+  loss_hook_n_iter: 50
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
 

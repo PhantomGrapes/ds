@@ -1,5 +1,6 @@
 import dynet as dy
 import random
+import numpy as np
 
 EOS = "<EOS>"
 characters = list("abcdefghijklmnopqrstuvwxyz ")
@@ -35,6 +36,7 @@ def embed_sentence(sentence):
     sentence = [EOS] + list(sentence) + [EOS]
     sentence = [char2int[c] for c in sentence]
 
+    sentence = [2,5,6,7,8,9,3]
     global input_lookup
 
     return [input_lookup[char] for char in sentence]
@@ -83,14 +85,19 @@ def attend(input_mat, state, w1dt):
 def decode(dec_lstm, vectors, output):
     output = [EOS] + list(output) + [EOS]
     output = [char2int[c] for c in output]
+    output = [2,5,6,7,8,9,3]
 
     w = dy.parameter(decoder_w)
     b = dy.parameter(decoder_b)
     w1 = dy.parameter(attention_w1)
+    # [2*state_size, sent_len]
     input_mat = dy.concatenate_cols(vectors)
     w1dt = None
 
-    last_output_embeddings = output_lookup[char2int[EOS]]
+    # last_output_embeddings = output_lookup[char2int[EOS]]
+    last_output_embeddings = output_lookup[2]
+    # s = dec_lstm.initial_state_from_raw_vectors([np.random.normal(0, 0.1, STATE_SIZE) for i in range(2 * LSTM_NUM_OF_LAYERS)])
+
     s = dec_lstm.initial_state().add_input(dy.concatenate([dy.vecInput(STATE_SIZE*2), last_output_embeddings]))
     loss = []
 
@@ -119,6 +126,8 @@ def generate(in_seq, enc_fwd_lstm, enc_bwd_lstm, dec_lstm):
 
     last_output_embeddings = output_lookup[char2int[EOS]]
     s = dec_lstm.initial_state().add_input(dy.concatenate([dy.vecInput(STATE_SIZE * 2), last_output_embeddings]))
+    # s = dec_lstm.initial_state_from_raw_vectors(
+    #     [np.random.normal(0, 0.1, STATE_SIZE) for i in range(2 * LSTM_NUM_OF_LAYERS)])
 
     out = ''
     count_EOS = 0
