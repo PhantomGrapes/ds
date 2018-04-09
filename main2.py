@@ -4,12 +4,15 @@ import argparse
 import atexit
 import logging
 #
+import os
 from hbconfig import Config
 import data_loader
 import hook
 import utils
 import  time
 from HRAN import Model
+from six.moves import cPickle
+import shutil
 
 import dynet as dy
 
@@ -54,13 +57,20 @@ def train(x, y, model, Config, tx, ty):
     print('Loss {:.2f}, time {:.2f}s'.format(total_loss / len(x), time.time() - start))
 
 
-def main(Config):
+def main(Config, mode):
     # 返回字典
     vocab = data_loader.load_vocab("vocab")
     Config.data.vocab_size = len(vocab)
     Config.data.vocab = vocab
     rev_vocab = utils.get_rev_vocab(vocab)
     Config.data.rev_vocab = rev_vocab
+    if mode == 'train':
+        save_path = os.path.join(Config.train.model_dir)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        shutil.rmtree(save_path)
+        with open(os.path.join(save_path, 'config.pkl'), 'wb') as f:
+            cPickle.dump(Config.to_dict(), f)
 
     # 定义训练数据
     train_X, test_X, train_y, test_y = data_loader.make_train_and_test_set()
@@ -88,4 +98,4 @@ if __name__ == '__main__':
         for key, value in Config.description.items():
             print(" - {}: {}".format(key, value))
 
-    main(Config)
+    main(Config, 'train')

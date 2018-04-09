@@ -13,13 +13,13 @@ import numpy as np
 from tqdm import tqdm
 
 
-# MODELDIR = "/Users/dingruixue/Downloads/ltp_data_v3.4.0"
-# from pyltp import Segmentor
-#
-# segmentor = Segmentor()
-# segmentor.load(os.path.join(MODELDIR, "cws.model"))
+MODELDIR = "/home/dingo/lib_data/ltp_data_v3.4.0"
+from pyltp import Segmentor
 
-segmentor = None
+segmentor = Segmentor()
+segmentor.load(os.path.join(MODELDIR, "cws.model"))
+
+# segmentor = None
 
 
 def get_question_answers():

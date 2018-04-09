@@ -1,6 +1,7 @@
 import dynet as dy
 import random
 import numpy as np
+import os
 
 class Utt:
     def __init__(self, raw):
@@ -36,6 +37,14 @@ class Model:
         self.sess_lstm = dy.LSTMBuilder(LSTM_NUM_OF_LAYERS, STATE_SIZE + EMBEDDINGS_SIZE, STATE_SIZE, self.model)
         self.decoder_w = self.model.add_parameters((VOCAB_SIZE, STATE_SIZE))
         self.decoder_b = self.model.add_parameters((VOCAB_SIZE))
+
+    def save(self):
+        save_path = os.path.join(self.Config.train.model_dir, 'model')
+        self.model.save(save_path)
+
+    def load(self):
+        load_path = os.path.join(self.Config.train.model_dir, 'model')
+        self.model.populate(load_path)
 
     def get_word_att(self, ut, l, s):
         input_mat = dy.concatenate_cols(ut.words_enc)
