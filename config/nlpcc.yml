@@ -15,7 +15,7 @@ data:
   EOS_ID: 3
 
 model:
-  batch_size: 5
+  batch_size: 10
   num_layers: 2
   num_units: 128
   embed_dim: 128
@@ -27,7 +27,7 @@ model:
   attention_size: 128
 
 train:
-  epoch: 10
+  epoch: 1000
   learning_rate: 0.001
   sampling_probability: 0.4
 
@@ -35,7 +35,7 @@ train:
   model_dir: 'logs/nlpcc'
 
   save_checkpoints_steps: 1000
-  loss_hook_n_iter: 50
+  loss_hook_n_iter: 100
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
 
