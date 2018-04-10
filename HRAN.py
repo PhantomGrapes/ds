@@ -22,28 +22,32 @@ class Model:
         STATE_SIZE = Config.model.num_units
         ATTENTION_SIZE = Config.model.attention_size
 
-        self.input_lookup = self.model.add_lookup_parameters((VOCAB_SIZE, EMBEDDINGS_SIZE))
-        self.output_lookup = self.model.add_lookup_parameters((VOCAB_SIZE, EMBEDDINGS_SIZE))
-        self.enc_fwd_lstm = dy.LSTMBuilder(LSTM_NUM_OF_LAYERS, EMBEDDINGS_SIZE, STATE_SIZE, self.model)
-        self.enc_bwd_lstm = dy.LSTMBuilder(LSTM_NUM_OF_LAYERS, EMBEDDINGS_SIZE, STATE_SIZE, self.model)
-        self.attention_word_w1 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * 2))
-        self.attention_word_w2 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * LSTM_NUM_OF_LAYERS * 2))
-        self.attention_word_w3 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * LSTM_NUM_OF_LAYERS * 2))
-        self.attention_word_v = self.model.add_parameters((1, ATTENTION_SIZE))
-        self.utt_lstm = dy.LSTMBuilder(LSTM_NUM_OF_LAYERS, STATE_SIZE * 2, STATE_SIZE, self.model)
-        self.attention_utt_w1 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE))
-        self.attention_utt_w2 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * LSTM_NUM_OF_LAYERS * 2))
-        self.attention_utt_v = self.model.add_parameters((1, ATTENTION_SIZE))
-        self.sess_lstm = dy.LSTMBuilder(LSTM_NUM_OF_LAYERS, STATE_SIZE + EMBEDDINGS_SIZE, STATE_SIZE, self.model)
-        self.decoder_w = self.model.add_parameters((VOCAB_SIZE, STATE_SIZE))
-        self.decoder_b = self.model.add_parameters((VOCAB_SIZE))
+        self.input_lookup = self.model.add_lookup_parameters((VOCAB_SIZE, EMBEDDINGS_SIZE), init='uniform')
+        self.output_lookup = self.model.add_lookup_parameters((VOCAB_SIZE, EMBEDDINGS_SIZE), init='uniform')
+        self.enc_fwd_lstm = dy.GRUBuilder(LSTM_NUM_OF_LAYERS, EMBEDDINGS_SIZE, STATE_SIZE, self.model)
+        self.enc_bwd_lstm = dy.GRUBuilder(LSTM_NUM_OF_LAYERS, EMBEDDINGS_SIZE, STATE_SIZE, self.model)
+        self.attention_word_w1 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * 2), init='uniform')
+        self.attention_word_w2 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * LSTM_NUM_OF_LAYERS * 1), init='uniform')
+        self.attention_word_w3 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * LSTM_NUM_OF_LAYERS * 1), init='uniform')
+        self.attention_word_v = self.model.add_parameters((1, ATTENTION_SIZE), init='uniform')
+        self.utt_lstm = dy.GRUBuilder(LSTM_NUM_OF_LAYERS, STATE_SIZE * 2, STATE_SIZE, self.model)
+        self.attention_utt_w1 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE), init='uniform')
+        self.attention_utt_w2 = self.model.add_parameters((ATTENTION_SIZE, STATE_SIZE * LSTM_NUM_OF_LAYERS * 1), init='uniform')
+        self.attention_utt_v = self.model.add_parameters((1, ATTENTION_SIZE), init='uniform')
+        self.sess_lstm = dy.GRUBuilder(LSTM_NUM_OF_LAYERS, STATE_SIZE + EMBEDDINGS_SIZE, STATE_SIZE, self.model)
+        self.decoder_w = self.model.add_parameters((VOCAB_SIZE, STATE_SIZE), init='uniform')
+        self.decoder_b = self.model.add_parameters((VOCAB_SIZE), init='uniform')
 
-    def save(self):
-        save_path = os.path.join(self.Config.train.model_dir, 'model')
+    def save(self, name='model'):
+        if not os.path.exists(self.Config.train.model_dir):
+            os.makedirs(self.Config.train.model_dir)
+        save_path = os.path.join(self.Config.train.model_dir, name)
         self.model.save(save_path)
 
-    def load(self):
-        load_path = os.path.join(self.Config.train.model_dir, 'model')
+    def load(self, name='model'):
+        load_path = os.path.join(self.Config.train.model_dir, name)
+        if not os.path.exists(load_path):
+            print("Path {} not found".format(load_path))
         self.model.populate(load_path)
 
     def get_word_att(self, ut, l, s):
@@ -112,7 +116,7 @@ class Model:
         for gt in target:
             spt = dy.concatenate(list(s.s()))
             l = self.utt_lstm.initial_state_from_raw_vectors(
-                [np.random.normal(0, 0.1, self.Config.model.num_units) for i in range(2 * self.Config.model.num_layers)])
+                [np.random.normal(0, 0.1, self.Config.model.num_units) for i in range(1 * self.Config.model.num_layers)])
             lpt = dy.concatenate(list(l.s()))
 
             # encode utt
@@ -224,7 +228,7 @@ class Model:
             spt = dy.concatenate(list(s.s()))
             l = self.utt_lstm.initial_state_from_raw_vectors(
                 [np.random.normal(0, 0.1, self.Config.model.num_units) for i in
-                 range(2 * self.Config.model.num_layers)])
+                 range(1 * self.Config.model.num_layers)])
             lpt = dy.concatenate(list(l.s()))
 
             # encode utt

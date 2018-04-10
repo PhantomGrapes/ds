@@ -208,7 +208,7 @@ def process_data():
     token2id('test', 'dec')
 
 
-def make_train_and_test_set(shuffle=True, bucket=True):
+def make_train_and_test_set(shuffle=True, bucket=True, tsize=None):
     """
     :param shuffle: shuffle data
     :param bucket: sort data by length of q & a
@@ -216,7 +216,7 @@ def make_train_and_test_set(shuffle=True, bucket=True):
     """
     print("make Training data and Test data Start....")
 
-    train_X, train_y = load_data('train_ids.enc', 'train_ids.dec') # numpy array, [DATA_SIZE, SNET_SIZE]
+    train_X, train_y = load_data('train_ids.enc', 'train_ids.dec', tsize=tsize) # numpy array, [DATA_SIZE, SNET_SIZE]
     test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
 
     assert len(train_X) == len(train_y)
@@ -235,7 +235,19 @@ def make_train_and_test_set(shuffle=True, bucket=True):
 
     return train_X, test_X, train_y, test_y
 
-def load_data(enc_fname, dec_fname):
+def make_eval_set():
+    print("make Eval data Start....")
+
+    test_X, test_y = load_data('test_ids.enc', 'test_ids.dec')
+
+    assert len(test_X) == len(test_y)
+
+    print("test data count :", len(test_X))
+
+    return test_X, test_y
+
+
+def load_data(enc_fname, dec_fname, tsize=None):
     """
     忽略超过长度限制的输入
     忽略问题答案长度超过diff的
@@ -246,11 +258,15 @@ def load_data(enc_fname, dec_fname):
     dec_input_data = open(os.path.join(Config.data.base_path, Config.data.processed_path, dec_fname), 'r', encoding='utf-8')
 
     enc_data, dec_data = [], []
+
+    num = 0
     for e_line, d_line in tqdm(zip(enc_input_data.readlines(), dec_input_data.readlines())):
         e_ids = json.loads(e_line)
         d_ids = [int(id_) for id_ in d_line.split()]
 
         if len(e_ids) == 0 or len(d_ids) == 0:
+            continue
+        if len(e_ids) > 20:
             continue
 
         seq_length = max([len(arr) for arr in e_ids])
@@ -258,8 +274,11 @@ def load_data(enc_fname, dec_fname):
             if abs(len(d_ids) - seq_length) / (seq_length + len(d_ids)) < Config.data.sentence_diff:
                 enc_data.append(e_ids)
                 dec_data.append(d_ids)
+                num += 1
+                if tsize is not None and num >= tsize:
+                    break
 
-    print("load data from {enc_fname}, {dec_fname}...")
+    print("load data from {}, {}, size: {}...".format(enc_fname, dec_fname, num))
     return np.array(enc_data), np.array(dec_data)
 
 
