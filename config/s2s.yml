@@ -29,17 +29,17 @@ model:
   attention_size: 128
 
 train:
-  epoch: 30
-  size: 1000
+  epoch: 100
+  size: 100
   learning_rate: 0.001
   sampling_probability: 0.4
   dropout: 0.2
 
   train_steps: 1000
-  model_dir: 'logs/nlpcc'
+  model_dir: 'logs/s2s_test'
 
-  save_checkpoints_steps: 20000
-  loss_hook_n_iter: 10
+  save_checkpoints_steps: 10000
+  loss_hook_n_iter: 10000
   check_hook_n_iter: 1000
   min_eval_frequency: 1000
 
@@ -47,7 +47,7 @@ train:
   debug: False
 
 predict:
-  beam_width: 0
+  beam_width: 10
   length_penalty_weight: 1.0
 
 slack:

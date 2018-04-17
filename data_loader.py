@@ -11,7 +11,8 @@ from hbconfig import Config
 import numpy as np
 # import tensorflow as tf
 from tqdm import tqdm
-
+from six.moves import cPickle
+from collections import Counter
 
 MODELDIR = "/home/dingo/lib_data/ltp_data_v3.4.0"
 from pyltp import Segmentor
@@ -32,6 +33,8 @@ def get_question_answers():
         session = []
         for line in f.readlines():
             if line.strip() == '':
+                if session == []:
+                    continue
                 questions.append(session[: -1])
                 answers.append(session[-1])
                 session = []
@@ -101,21 +104,44 @@ def basic_tokenizer(line, normalize_digits=True):
 
 
 def build_vocab(in_fname, out_fname, normalize_digits=True):
-    print("Count each vocab frequency ...")
+    embed = {}
+    print('Loading word embedding...')
+    with open(os.path.join(Config.data.base_path, Config.data.word_emb), 'r', encoding='utf-8') as f:
+        for line in tqdm(f.readlines()):
+            items = line.split(' ')
+            word = items[0]
+            vec = items[1:]
+            embed[word] = [float(x) for x in vec]
 
+    print("Count each vocab frequency ...")
     vocab = {}
+    oov = {}
     def count_vocab(fname, multi=False):
         with open(fname, 'r', encoding='utf-8') as f:
             for line in tqdm(f.readlines()):
                 if multi:
                     us = json.loads(line)
                     for u in us:
-                        for token in segmentor.segment(u):
+                        # for token in segmentor.segment(u):
+                        for token in u.strip().split('\t'):
+                            # token = token.strip()
+                            if not token in embed:
+                                if not token in oov:
+                                    oov[token] = 0
+                                oov[token] += 1
+                                continue
                             if not token in vocab:
                                 vocab[token] = 0
                             vocab[token] += 1
                 else:
-                    for token in segmentor.segment(line):
+                    # for token in segmentor.segment(line):
+                    for token in line.strip().split('\t'):
+                        # token = token.strip()
+                        if not token in embed:
+                            if not token in oov:
+                                oov[token] = 0
+                            oov[token] += 1
+                            continue
                         if not token in vocab:
                             vocab[token] = 0
                         vocab[token] += 1
@@ -128,19 +154,36 @@ def build_vocab(in_fname, out_fname, normalize_digits=True):
 
     print("total vocab size:", len(vocab))
     sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
+    sorted_oov = sorted(oov, key=oov.get, reverse=True)
 
+    emb_matrix = []
     dest_path = os.path.join(Config.data.base_path, Config.data.processed_path, 'vocab')
+    oov_size = 0
     with open(dest_path, 'w', encoding='utf-8') as f:
         f.write(('<pad>' + '\n'))
         f.write(('<unk>' + '\n'))
         f.write(('<s>' + '\n'))
         f.write(('<\s>' + '\n'))
         index = 4
+        for word in tqdm(sorted_oov):
+            if oov[word] < Config.data.oov_threshold:
+                break
+            f.write((word + '\n'))
+            index += 1
+            oov_size += 1
         for word in tqdm(sorted_vocab):
             if vocab[word] < Config.data.word_threshold:
                 break
             f.write((word + '\n'))
+            emb_matrix.append(embed[word])
             index += 1
+
+    with open(os.path.join(Config.data.base_path, Config.data.processed_path, 'oov_size'), 'w', encoding='utf-8') as f:
+        f.write(str(oov_size))
+
+    with open(os.path.join(Config.data.base_path, Config.data.processed_path, 'embed.pkl'), 'wb') as f:
+        cPickle.dump(emb_matrix, f)
+
 
 
 def load_vocab(vocab_fname):
@@ -148,12 +191,13 @@ def load_vocab(vocab_fname):
     with open(os.path.join(Config.data.base_path, Config.data.processed_path, vocab_fname), 'r', encoding='utf-8') as f:
         words = f.read().splitlines()
         print("vocab size:", len(words))
+    c = Counter(words)
     return {words[i]: i for i in range(len(words))}
 
 
 def sentence2id(vocab, line):
-    return [vocab.get(token, vocab['<unk>']) for token in segmentor.segment(line)]
-
+    # return [vocab.get(token, vocab['<unk>']) for token in segmentor.segment(line)]
+    return [vocab.get(token, vocab['<unk>']) for token in line.strip().split('\t')]
 
 def token2id(data, mode):
     """ Convert all the tokens in the data into their corresponding
